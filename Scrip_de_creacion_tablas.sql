@@ -1,4 +1,5 @@
 ﻿USE GD2C2023;
+
 GO
 --Drops de las restricciones de FK
 IF OBJECT_ID('PIE_DERECHO.UBICACION_BARRIO_CODIGO', 'F') IS NOT NULL
