@@ -1,4 +1,4 @@
-﻿USE GD2C2023;
+﻿﻿USE GD2C2023;
 
 GO
 --Drops de las restricciones de FK
@@ -57,9 +57,9 @@ ALTER TABLE PIE_DERECHO.sucursales
 DROP CONSTRAINT SUCURSAL_UBICACION_CODIGO;
 GO
 
-IF OBJECT_ID('PIE_DERECHO.AGENTE_SUCURSAL_CODIGO', 'F') IS NOT NULL
+IF OBJECT_ID('PIE_DERECHO.AGENTE_SUCURSAL_PK', 'F') IS NOT NULL
 ALTER TABLE PIE_DERECHO.agentes
-DROP CONSTRAINT AGENTE_SUCURSAL_CODIGO;
+DROP CONSTRAINT AGENTE_SUCURSAL_PK;
 GO
 
 IF OBJECT_ID('PIE_DERECHO.ANUNCIO_TIPO_OPERACION_CODIGO', 'F') IS NOT NULL
@@ -77,14 +77,14 @@ ALTER TABLE PIE_DERECHO.anuncios
 DROP CONSTRAINT ANUNCIO_AGENTE_CODIGO;
 GO
 
-IF OBJECT_ID('PIE_DERECHO.ANUNCIO_INMUEBLE_CODIGO', 'F') IS NOT NULL
+IF OBJECT_ID('PIE_DERECHO.ANUNCIO_INMUEBLE_PK', 'F') IS NOT NULL
 ALTER TABLE PIE_DERECHO.anuncios
-DROP CONSTRAINT ANUNCIO_INMUEBLE_CODIGO;
+DROP CONSTRAINT ANUNCIO_INMUEBLE_PK;
 GO
 
-IF OBJECT_ID('PIE_DERECHO.VENTA_ANUNCIO_CODIGO', 'F') IS NOT NULL
+IF OBJECT_ID('PIE_DERECHO.VENTA_ANUNCIO_PK', 'F') IS NOT NULL
 ALTER TABLE GD2C2023.PIE_DERECHO.ventas
-DROP CONSTRAINT VENTA_ANUNCIO_CODIGO;
+DROP CONSTRAINT VENTA_ANUNCIO_PK;
 GO
 
 IF OBJECT_ID('PIE_DERECHO.VENTA_COMPRADOR_CODIGO', 'F') IS NOT NULL
@@ -107,9 +107,9 @@ ALTER TABLE PIE_DERECHO.pagos_por_alquiler
 DROP CONSTRAINT PAGO_INQUILINO_CODIGO;
 GO
 
-IF OBJECT_ID('PIE_DERECHO.ALQUILER_VENTA_ANUNCIO_CODIGO', 'F') IS NOT NULL
+IF OBJECT_ID('PIE_DERECHO.ALQUILER_VENTA_ANUNCIO_PK', 'F') IS NOT NULL
 ALTER TABLE PIE_DERECHO.alquileres
-DROP CONSTRAINT ALQUILER_VENTA_ANUNCIO_CODIGO;
+DROP CONSTRAINT ALQUILER_VENTA_ANUNCIO_PK;
 GO
 
 IF OBJECT_ID('PIE_DERECHO.ALQUILER_INQUILINO_CODIGO', 'F') IS NOT NULL
@@ -414,7 +414,8 @@ CREATE TABLE PIE_DERECHO.propietarios (
 
 -- Creación de la tabla 'inmuebles'
 CREATE TABLE PIE_DERECHO.inmuebles (
-    INMUEBLE_CODIGO numeric(18, 0) PRIMARY KEY,
+	INMUEBLE_PK INT IDENTITY PRIMARY KEY,
+    INMUEBLE_CODIGO numeric(18, 0),
     INMUEBLE_NOMBRE nvarchar(100),
     INMUEBLE_DESCRIPCION nvarchar(100),
     INMUEBLE_SUPERFICIETOTAL numeric(18, 2),
@@ -430,7 +431,8 @@ CREATE TABLE PIE_DERECHO.inmuebles (
     INMUEBLE_ORIENTACION_CODIGO INT,
     INMUEBLE_ESTADO_CODIGO INT,
     INMUEBLE_UBICACION_CODIGO INT,
-    INMUEBLE_PROPIETARIOS_CODIGO INT
+    INMUEBLE_PROPIETARIOS_CODIGO INT,
+	DUPLICADO BIT
 );
 GO
 
@@ -450,10 +452,12 @@ GO
 
 -- Creación de la tabla 'sucursales'
 CREATE TABLE PIE_DERECHO.sucursales (
-    SUCURSAL_CODIGO numeric(18, 0) PRIMARY KEY,
+	SUCURSAL_PK INT IDENTITY PRIMARY KEY,
+    SUCURSAL_CODIGO numeric(18, 0),
     SUCURSAL_NOMBRE nvarchar(100),
     SUCURSAL_TELEFONO nvarchar(100),
-    SUCURSAL_UBICACION_CODIGO INT
+    SUCURSAL_UBICACION_CODIGO INT,
+	SUCURSALES_DUPLICADO BIT
 );
 GO
 
@@ -467,13 +471,14 @@ CREATE TABLE PIE_DERECHO.agentes (
     AGENTE_TELEFONO numeric(18, 0),
     AGENTE_MAIL nvarchar(100),
     AGENTE_FECHA_NAC datetime,
-    AGENTE_SUCURSAL_CODIGO numeric(18, 0)
+    AGENTE_SUCURSAL_PK INT
 );
 GO
 
 -- Creación de la tabla 'anuncios'
 CREATE TABLE PIE_DERECHO.anuncios (
-    ANUNCIO_CODIGO numeric(19, 0) PRIMARY KEY,
+	ANUNCIO_PK INT IDENTITY PRIMARY KEY,
+    ANUNCIO_CODIGO numeric(19, 0),
     ANUNCIO_FECHA_PUBLICACION datetime,
     ANUNCIO_PRECIO_PUBLICADO numeric(18, 2),
     ANUNCIO_COSTO_ANUNCIO numeric(18, 2),
@@ -483,7 +488,8 @@ CREATE TABLE PIE_DERECHO.anuncios (
     ANUNCIO_TIPO_OPERACION_CODIGO INT,
     ANUNCIO_MONEDA_CODIGO INT,
     ANUNCIO_AGENTE_CODIGO INT,
-    ANUNCIO_INMUEBLE_CODIGO numeric(18, 0)
+    ANUNCIO_INMUEBLE_PK INT,
+	ANUNCIO_DUPLICADO INT
 );
 GO
 
@@ -502,12 +508,14 @@ GO
 
 -- Creación de la tabla 'ventas'
 CREATE TABLE PIE_DERECHO.ventas (
-    VENTA_CODIGO numeric(18, 0) PRIMARY KEY,
+	VENTA_PK INT IDENTITY PRIMARY KEY,
+    VENTA_CODIGO numeric(18, 0),
     VENTA_FECHA datetime,
     VENTA_PRECIO_VENTA numeric(18, 2),
     VENTA_COMISION numeric(18, 2),
-    VENTA_ANUNCIO_CODIGO numeric(19, 0),
-    VENTA_COMPRADOR_CODIGO INT
+    VENTA_ANUNCIO_PK INT,
+    VENTA_COMPRADOR_CODIGO INT,
+	VENTA_DUPLICADO BIT
 );
 GO
 
@@ -571,7 +579,7 @@ CREATE TABLE PIE_DERECHO.alquileres (
     ALQUILER_DEPOSITO numeric(18, 2),
     ALQUILER_COMISION numeric(18, 2),
     ALQUILER_GASTOS_AVERIGUA numeric(18, 2),
-    ALQUILER_VENTA_ANUNCIO_CODIGO numeric(19, 0),
+    ALQUILER_VENTA_ANUNCIO_PK INT,
     ALQUILER_INQUILINO_CODIGO INT,
     ALQUILER_ESTADO_DE_ALQUILERES_CODIGO INT,
 );
@@ -655,9 +663,9 @@ REFERENCES PIE_DERECHO.ubicaciones(UBICACION_CODIGO)
 GO
 
 ALTER TABLE PIE_DERECHO.agentes
-ADD CONSTRAINT AGENTE_SUCURSAL_CODIGO
-FOREIGN KEY (AGENTE_SUCURSAL_CODIGO) 
-REFERENCES PIE_DERECHO.sucursales(SUCURSAL_CODIGO)
+ADD CONSTRAINT AGENTE_SUCURSAL_PK
+FOREIGN KEY (AGENTE_SUCURSAL_PK) 
+REFERENCES PIE_DERECHO.sucursales(SUCURSAL_PK)
 GO
 
 ALTER TABLE PIE_DERECHO.anuncios
@@ -679,15 +687,15 @@ REFERENCES PIE_DERECHO.agentes(AGENTE_CODIGO)
 GO
 
 ALTER TABLE PIE_DERECHO.anuncios
-ADD CONSTRAINT ANUNCIO_INMUEBLE_CODIGO
-FOREIGN KEY (ANUNCIO_INMUEBLE_CODIGO) 
-REFERENCES PIE_DERECHO.inmuebles(INMUEBLE_CODIGO)
+ADD CONSTRAINT ANUNCIO_INMUEBLE_PK
+FOREIGN KEY (ANUNCIO_INMUEBLE_PK) 
+REFERENCES PIE_DERECHO.inmuebles(INMUEBLE_PK)
 GO
 
 ALTER TABLE PIE_DERECHO.ventas
-ADD CONSTRAINT VENTA_ANUNCIO_CODIGO
-FOREIGN KEY (VENTA_ANUNCIO_CODIGO)
-REFERENCES PIE_DERECHO.anuncios(ANUNCIO_CODIGO)
+ADD CONSTRAINT VENTA_ANUNCIO_PK
+FOREIGN KEY (VENTA_ANUNCIO_PK)
+REFERENCES PIE_DERECHO.anuncios(ANUNCIO_PK)
 GO
 
 ALTER TABLE PIE_DERECHO.ventas
@@ -715,9 +723,9 @@ REFERENCES PIE_DERECHO.inquilinos(INQUILINO_CODIGO)
 GO
 
 ALTER TABLE PIE_DERECHO.alquileres
-ADD CONSTRAINT ALQUILER_VENTA_ANUNCIO_CODIGO
-FOREIGN KEY (ALQUILER_VENTA_ANUNCIO_CODIGO) 
-REFERENCES PIE_DERECHO.anuncios(ANUNCIO_CODIGO)
+ADD CONSTRAINT ALQUILER_VENTA_ANUNCIO_PK
+FOREIGN KEY (ALQUILER_VENTA_ANUNCIO_PK) 
+REFERENCES PIE_DERECHO.anuncios(ANUNCIO_PK)
 GO
 
 ALTER TABLE PIE_DERECHO.alquileres
@@ -742,19 +750,38 @@ GO
 CREATE PROCEDURE PIE_DERECHO.migrar_inmuebles
 AS
 	BEGIN
+
+	CREATE INDEX IX_TipoInmueble ON PIE_DERECHO.tipos_de_inmueble (TIPO_INMUEBLE_INMUEBLE);
+    CREATE INDEX IX_Disposicion ON PIE_DERECHO.disposiciones (DISPOSICION_INMUEBLE);
+    CREATE INDEX IX_Ambientes ON PIE_DERECHO.ambientes (AMBIENTES_CANT_INMUEBLE);
+    CREATE INDEX IX_Orientacion ON PIE_DERECHO.orientaciones (ORIENTACION_INMUEBLE);
+    CREATE INDEX IX_Estados ON PIE_DERECHO.estados (ESTADO_INMUEBLE);
+    CREATE INDEX IX_Ubicacion ON PIE_DERECHO.ubicaciones (UBICACION_DIRECCION);
+    CREATE INDEX IX_Propietarios ON PIE_DERECHO.propietarios (PROPIETARIO_DNI);
+
 	INSERT INTO PIE_DERECHO.inmuebles (INMUEBLE_CODIGO, INMUEBLE_NOMBRE, INMUEBLE_DESCRIPCION, INMUEBLE_SUPERFICIETOTAL, INMUEBLE_ANTIGUEDAD, INMUEBLE_EXPESAS, INMUEBLE_CARACTERISTICA_WIFI, INMUEBLE_CARACTERISTICA_CABLE, INMUEBLE_CARACTERISTICA_CALEFACCION, INMUEBLE_CARACTERISTICA_GAS, 
-										INMUEBLE_TIPO_INMUEBLE_CODIGO, INMUEBLE_DISPOSICION_CODIGO, INMUEBLE_AMBIENTES_CODIGO, INMUEBLE_ORIENTACION_CODIGO, INMUEBLE_ESTADO_CODIGO, INMUEBLE_UBICACION_CODIGO, INMUEBLE_PROPIETARIOS_CODIGO)        
+										INMUEBLE_TIPO_INMUEBLE_CODIGO, INMUEBLE_DISPOSICION_CODIGO, INMUEBLE_AMBIENTES_CODIGO, INMUEBLE_ORIENTACION_CODIGO, INMUEBLE_ESTADO_CODIGO, INMUEBLE_UBICACION_CODIGO, INMUEBLE_PROPIETARIOS_CODIGO, DUPLICADO)        
 	SELECT DISTINCT M.INMUEBLE_CODIGO, M.INMUEBLE_NOMBRE, M.INMUEBLE_DESCRIPCION, M.INMUEBLE_SUPERFICIETOTAL, M.INMUEBLE_ANTIGUEDAD, M.INMUEBLE_EXPESAS, M.INMUEBLE_CARACTERISTICA_WIFI, M.INMUEBLE_CARACTERISTICA_CABLE, M.INMUEBLE_CARACTERISTICA_CALEFACCION, M.INMUEBLE_CARACTERISTICA_GAS,
-					T.TIPO_INMUEBLE_CODIGO, D.DISPOSICION_CODIGO, A.AMBIENTES_CODIGO, O.ORIENTACION_CODIGO, E.ESTADO_CODIGO, U.UBICACION_CODIGO, P.PROPIETARIO_CODIGO
+					T.TIPO_INMUEBLE_CODIGO, D.DISPOSICION_CODIGO, A.AMBIENTES_CODIGO, O.ORIENTACION_CODIGO, E.ESTADO_CODIGO, U.UBICACION_CODIGO, P.PROPIETARIO_CODIGO, 0
 	FROM gd_esquema.Maestra M
-	JOIN tipos_de_inmueble T ON T.TIPO_INMUEBLE_INMUEBLE = M.INMUEBLE_TIPO_INMUEBLE
-	JOIN disposiciones D ON D.DISPOSICION_INMUEBLE = M.INMUEBLE_DISPOSICION
-	JOIN ambientes A ON A.AMBIENTES_CANT_INMUEBLE = M.INMUEBLE_CANT_AMBIENTES
-	JOIN orientaciones O ON O.ORIENTACION_INMUEBLE = M.INMUEBLE_ORIENTACION
-	JOIN estados E ON E.ESTADO_INMUEBLE = M.INMUEBLE_ESTADO
-	JOIN ubicaciones U ON U.UBICACION_DIRECCION = INMUEBLE_DIRECCION
-	JOIN propietarios P ON P.PROPIETARIO_DNI = M.PROPIETARIO_DNI
+	JOIN PIE_DERECHO.tipos_de_inmueble T ON T.TIPO_INMUEBLE_INMUEBLE = M.INMUEBLE_TIPO_INMUEBLE
+	JOIN PIE_DERECHO.disposiciones D ON D.DISPOSICION_INMUEBLE = M.INMUEBLE_DISPOSICION
+	JOIN PIE_DERECHO.ambientes A ON A.AMBIENTES_CANT_INMUEBLE = M.INMUEBLE_CANT_AMBIENTES
+	JOIN PIE_DERECHO.orientaciones O ON O.ORIENTACION_INMUEBLE = M.INMUEBLE_ORIENTACION
+	JOIN PIE_DERECHO.estados E ON E.ESTADO_INMUEBLE = M.INMUEBLE_ESTADO
+	JOIN PIE_DERECHO.ubicaciones U ON U.UBICACION_DIRECCION = INMUEBLE_DIRECCION
+	JOIN PIE_DERECHO.propietarios P ON P.PROPIETARIO_DNI = M.PROPIETARIO_DNI
 	WHERE M.INMUEBLE_CODIGO IS NOT NULL
+
+	UPDATE PIE_DERECHO.inmuebles
+	SET DUPLICADO = 1
+	WHERE PIE_DERECHO.inmuebles.INMUEBLE_CODIGO IN (
+    SELECT PIE_DERECHO.inmuebles.INMUEBLE_CODIGO
+    FROM PIE_DERECHO.inmuebles
+    GROUP BY PIE_DERECHO.inmuebles.INMUEBLE_CODIGO
+    HAVING COUNT(*) > 1
+	)
+
 END
 GO
 
@@ -873,7 +900,7 @@ AS
 	INSERT INTO PIE_DERECHO.sucursales (SUCURSAL_CODIGO, SUCURSAL_NOMBRE, SUCURSAL_TELEFONO, SUCURSAL_UBICACION_CODIGO)
 	SELECT DISTINCT M.SUCURSAL_CODIGO, M.SUCURSAL_NOMBRE, M.SUCURSAL_TELEFONO, U.UBICACION_CODIGO
 	FROM gd_esquema.Maestra M
-	JOIN PIE_DERECHO.ubicaciones U ON U.UBICACION_DIRECCION = M.INMUEBLE_DIRECCION
+	JOIN ubicaciones U ON U.UBICACION_DIRECCION = M.INMUEBLE_DIRECCION
 	WHERE M.SUCURSAL_CODIGO IS NOT NULL
 END
 GO
@@ -883,11 +910,11 @@ GO
 CREATE PROCEDURE PIE_DERECHO.migrar_agentes
 AS
 	BEGIN
-	INSERT INTO PIE_DERECHO.agentes (AGENTE_NOMBRE, AGENTE_APELLIDO, AGENTE_DNI, AGENTE_FECHA_REGISTRO, AGENTE_TELEFONO, AGENTE_MAIL, AGENTE_FECHA_NAC, AGENTE_SUCURSAL_CODIGO)
-	SELECT DISTINCT M.AGENTE_NOMBRE, M.AGENTE_APELLIDO, M.AGENTE_DNI, M.AGENTE_FECHA_REGISTRO, M.AGENTE_TELEFONO, M.AGENTE_MAIL, M.AGENTE_FECHA_NAC, S.SUCURSAL_CODIGO	
+	INSERT INTO PIE_DERECHO.agentes (AGENTE_NOMBRE, AGENTE_APELLIDO, AGENTE_DNI, AGENTE_FECHA_REGISTRO, AGENTE_TELEFONO, AGENTE_MAIL, AGENTE_FECHA_NAC, AGENTE_SUCURSAL_PK)
+	SELECT DISTINCT M.AGENTE_NOMBRE, M.AGENTE_APELLIDO, M.AGENTE_DNI, M.AGENTE_FECHA_REGISTRO, M.AGENTE_TELEFONO, M.AGENTE_MAIL, M.AGENTE_FECHA_NAC, S.SUCURSAL_PK	
 	FROM gd_esquema.Maestra M
 	JOIN sucursales S ON S.SUCURSAL_CODIGO = M.SUCURSAL_CODIGO
-	--WHERE M.AGENTE_DNI IS NOT NULL
+	WHERE M.AGENTE_DNI IS NOT NULL
 END
 GO
 --tipos de operacion
@@ -905,8 +932,8 @@ GO
 CREATE PROCEDURE PIE_DERECHO.migrar_anuncios
 AS
 	BEGIN 
-	INSERT INTO PIE_DERECHO.anuncios (ANUNCIO_CODIGO, ANUNCIO_FECHA_PUBLICACION, ANUNCIO_PRECIO_PUBLICADO, ANUNCIO_COSTO_ANUNCIO, ANUNCIO_FECHA_FINALIZACION, ANUNCIO_ESTADO, ANUNCIO_TIPO_PERIODO, ANUNCIO_INMUEBLE_CODIGO)
-	SELECT DISTINCT M.ANUNCIO_CODIGO, M.ANUNCIO_FECHA_PUBLICACION, M.ANUNCIO_PRECIO_PUBLICADO, M.ANUNCIO_COSTO_ANUNCIO, M.ANUNCIO_FECHA_FINALIZACION, M.ANUNCIO_ESTADO, M.ANUNCIO_TIPO_PERIODO, I.INMUEBLE_CODIGO
+	INSERT INTO PIE_DERECHO.anuncios (ANUNCIO_CODIGO, ANUNCIO_FECHA_PUBLICACION, ANUNCIO_PRECIO_PUBLICADO, ANUNCIO_COSTO_ANUNCIO, ANUNCIO_FECHA_FINALIZACION, ANUNCIO_ESTADO, ANUNCIO_TIPO_PERIODO, ANUNCIO_INMUEBLE_PK)
+	SELECT DISTINCT M.ANUNCIO_CODIGO, M.ANUNCIO_FECHA_PUBLICACION, M.ANUNCIO_PRECIO_PUBLICADO, M.ANUNCIO_COSTO_ANUNCIO, M.ANUNCIO_FECHA_FINALIZACION, M.ANUNCIO_ESTADO, M.ANUNCIO_TIPO_PERIODO, I.INMUEBLE_PK
 	FROM gd_esquema.Maestra M
 	JOIN inmuebles I ON M.INMUEBLE_CODIGO = I.INMUEBLE_CODIGO
 	WHERE M.ANUNCIO_CODIGO IS NOT NULL
@@ -928,8 +955,8 @@ GO
 CREATE PROCEDURE PIE_DERECHO.migrar_alquileres
 AS
 	BEGIN 
-	INSERT INTO PIE_DERECHO.alquileres (ALQUILER_CODIGO, ALQUILER_FECHA_INICIO, ALQUILER_FECHA_FIN, ALQUILER_CANT_PERIODOS, ALQUILER_DEPOSITO, ALQUILER_COMISION, ALQUILER_GASTOS_AVERIGUA, ALQUILER_VENTA_ANUNCIO_CODIGO)
-	SELECT DISTINCT M.ALQUILER_CODIGO, M.ALQUILER_FECHA_INICIO, M.ALQUILER_FECHA_FIN, M.ALQUILER_CANT_PERIODOS, M.ALQUILER_DEPOSITO, M.ALQUILER_COMISION, M.ALQUILER_GASTOS_AVERIGUA, A.ANUNCIO_CODIGO
+	INSERT INTO PIE_DERECHO.alquileres (ALQUILER_CODIGO, ALQUILER_FECHA_INICIO, ALQUILER_FECHA_FIN, ALQUILER_CANT_PERIODOS, ALQUILER_DEPOSITO, ALQUILER_COMISION, ALQUILER_GASTOS_AVERIGUA, ALQUILER_VENTA_ANUNCIO_PK)
+	SELECT DISTINCT M.ALQUILER_CODIGO, M.ALQUILER_FECHA_INICIO, M.ALQUILER_FECHA_FIN, M.ALQUILER_CANT_PERIODOS, M.ALQUILER_DEPOSITO, M.ALQUILER_COMISION, M.ALQUILER_GASTOS_AVERIGUA, A.ANUNCIO_PK
 	FROM gd_esquema.Maestra M
 	JOIN anuncios A ON A.ANUNCIO_CODIGO = M.ANUNCIO_CODIGO
 	WHERE M.ALQUILER_CODIGO IS NOT NULL
@@ -944,7 +971,7 @@ AS
 	INSERT INTO PIE_DERECHO.importes_alquiler (IMPORTE_ALQ_ALQUILER_CODIGO, IMPORTE_ALQ_NRO_PERIODO_INI, IMPORTE_ALQ_NRO_PERIODO_FIN, IMPORTE_ALQ_PRECIO)
 	SELECT DISTINCT A.ALQUILER_CODIGO, M.DETALLE_ALQ_NRO_PERIODO_INI, M.DETALLE_ALQ_NRO_PERIODO_FIN, M.DETALLE_ALQ_PRECIO
 	FROM gd_esquema.Maestra M
-	JOIN PIE_DERECHO.alquileres A ON A.ALQUILER_CODIGO = M.ALQUILER_CODIGO
+	JOIN alquileres A ON A.ALQUILER_CODIGO = M.ALQUILER_CODIGO
 	WHERE M.ALQUILER_CODIGO IS NOT NULL
 END 
 GO
@@ -973,7 +1000,7 @@ AS
 END
 GO
 
--- pagos_por_alquiler                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+-- pagos_por_alquiler
 
 CREATE PROCEDURE PIE_DERECHO.migrar_pagos_por_alquiler
 AS
@@ -1027,10 +1054,11 @@ GO
 CREATE PROCEDURE PIE_DERECHO.migrar_ventas
 AS
 	BEGIN
-	INSERT INTO PIE_DERECHO.ventas (VENTA_CODIGO, VENTA_FECHA, VENTA_PRECIO_VENTA, VENTA_COMISION, VENTA_ANUNCIO_CODIGO)
-	SELECT DISTINCT M.VENTA_CODIGO, M.VENTA_FECHA, M.VENTA_PRECIO_VENTA, M.VENTA_COMISION, A.ANUNCIO_CODIGO
+	INSERT INTO PIE_DERECHO.ventas (VENTA_CODIGO, VENTA_FECHA, VENTA_PRECIO_VENTA, VENTA_COMISION, VENTA_ANUNCIO_PK, VENTA_COMPRADOR_CODIGO)
+	SELECT DISTINCT M.VENTA_CODIGO, M.VENTA_FECHA, M.VENTA_PRECIO_VENTA, M.VENTA_COMISION, A.ANUNCIO_PK, C.COMPRADOR_CODIGO
 	FROM gd_esquema.Maestra M
 	JOIN anuncios A ON A.ANUNCIO_CODIGO = M.ANUNCIO_CODIGO
+	JOIN compradores C ON C.COMPRADOR_DNI = M.COMPRADOR_DNI
 	WHERE M.VENTA_CODIGO IS NOT NULL
 END
 GO
@@ -1073,4 +1101,5 @@ EXEC PIE_DERECHO.migrar_pagos_por_alquiler
 EXEC PIE_DERECHO.migrar_estado_de_alquileres
 EXEC PIE_DERECHO.migrar_alquileres
 EXEC PIE_DERECHO.migrar_importes_alquiler
+
 
