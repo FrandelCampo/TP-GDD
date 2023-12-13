@@ -327,8 +327,7 @@ GO
 
 CREATE TABLE PIE_DERECHO.BI_HECHOS_ANUNCIO(
 	id_hechos_anuncio INT IDENTITY PRIMARY KEY,
-
-	estado varchar(100),
+	--estado varchar(100)
 	tipo_operacion INT,
 	ambientes INT ,
 	tipo_inmueble INT ,
@@ -336,31 +335,38 @@ CREATE TABLE PIE_DERECHO.BI_HECHOS_ANUNCIO(
 	tipo_moneda INT ,
 	sucursal INT ,
 	rango_etario_empleado INT ,
-	anuncio_fecha_publicacion INT,
-	anuncio_fecha_finalizacion INT ,
+	--anuncio_fecha_publicacion INT,
+	--anuncio_fecha_finalizacion INT,
+	anuncio_tiempo INT,
 	anuncio_ubicacion INT ,
-	anuncio_precio_publicado numeric(18, 2),
-	tiempo_publicado INT
+	anuncio_precio_promedio numeric(18, 2),
+	anuncio_duracion_promedio_dias INT,
+	anuncio_operaciones_concretadas INT,
+	anuncio_cantidad_anuncios INT,
+	anuncio_monto_operaciones_concretadas numeric(18, 2),
+	anuncio_comision_promedio numeric(18, 2)
 );
 GO
 
 CREATE TABLE PIE_DERECHO.BI_HECHOS_ALQUILER(
 	id_hechos_alquiler INT IDENTITY PRIMARY KEY,
 	rango_etario_inquilino INT,
-	fecha_inicio INT,
-	fecha_fin INT,
-	pago_alq_fecha_pago INT,
-	pago_alq_fecha_inicio INT ,
-	pago_alq_fecha_vencimiento INT,
-	pago_alq_importe numeric(18, 2),
-	alq_comision numeric(18, 2),
 	alquiler_ubicacion INT,
-	tipo_moneda INT,
 	tipo_operacion INT,
-	ambientes INT,
-	sucursal INT ,
-	rango_metros INT ,
-	tipo_inmueble INT
+	sucursal INT,
+	alquiler_tiempo INT,
+	pago_alq_tiempo INT,
+	alquiler_porcentaje_incumplimientos numeric(18, 0),
+	alquileres_activos INT,
+	pago_alq_cant_pagos INT,
+	pago_alq_promedio_aumento numeric(18, 0)
+	--fecha_inicio INT,
+	--fecha_fin INT,
+	--pago_alq_fecha_pago INT,
+	--pago_alq_fecha_inicio INT ,
+	--pago_alq_fecha_vencimiento INT,
+	--pago_alq_importe numeric(18, 2),
+	--alq_comision numeric(18, 2),
 );
 GO
 
@@ -370,17 +376,16 @@ CREATE TABLE PIE_DERECHO.BI_HECHOS_VENTA(
 	tiempo INT,
 	tipo_inmueble INT ,
 	sucursal INT ,
-	venta_precio numeric(18,2),
-	superficie_total numeric(18, 2),
-	venta_comision numeric(18, 2),
 	venta_ubicacion INT ,
 	tipo_moneda INT ,
-	tipo_operacion INT,
-	ambientes INT
+	venta_precio_m2_promedio numeric(18,2),
+	venta_cantidad INT
 );
 GO
 
-ALTER TABLE PIE_DERECHO.BI_HECHOS_ANUNCIO ADD CONSTRAINT FK_ANUNCIO_TIEMPO_ID FOREIGN KEY (anuncio_fecha_publicacion) REFERENCES PIE_DERECHO.BI_TIEMPO(TIEMPO_CODIGO)
+
+--ALTER TABLE PIE_DERECHO.BI_HECHOS_ANUNCIO ADD CONSTRAINT FK_ANUNCIO_TIEMPO_ID FOREIGN KEY (anuncio_fecha_publicacion) REFERENCES PIE_DERECHO.BI_TIEMPO(TIEMPO_CODIGO)
+--GO
 
 ALTER TABLE PIE_DERECHO.BI_HECHOS_ANUNCIO ADD CONSTRAINT FK_ANUNCIO_TIPO_OPERACION_ID FOREIGN KEY (tipo_operacion) REFERENCES PIE_DERECHO.BI_TIPO_OPERACION(TIPO_OPERACION_CODIGO)
 GO
@@ -711,35 +716,47 @@ CREATE PROCEDURE PIE_DERECHO.BI_MIGRAR_HECHOS_ANUNCIOS
 AS
 BEGIN
 INSERT INTO PIE_DERECHO.BI_HECHOS_ANUNCIO(
-	estado,
 	tipo_operacion,
-	anuncio_ubicacion,
 	ambientes,
 	tipo_inmueble,
 	rango_metros,
 	tipo_moneda,
-	rango_etario_empleado,
 	sucursal,
-	anuncio_precio_publicado,
-	anuncio_fecha_publicacion,
-	anuncio_fecha_finalizacion,
-	tiempo_publicado
+	rango_etario_empleado,
+	anuncio_ubicacion,
+	anuncio_tiempo,
+	anuncio_precio_promedio,
+	anuncio_duracion_promedio_dias,
+	anuncio_operaciones_concretadas,
+	anuncio_cantidad_anuncios,
+	anuncio_monto_operaciones_concretadas,
+	anuncio_comision_promedio
 )
 SELECT DISTINCT
-	a.ANUNCIO_ESTADO,
 	b_tiop.TIPO_OPERACION_CODIGO, --ID TIPO OPERACION
-	bi_ubi.UBICACION_CODIGO, --ID UBICACION
 	bi_amb.AMBIENTES_CODIGO, --ID AMBIENTES
 	bi_bti.TIPO_INMUEBLE_CODIGO, --TIPO INMUEBLES
 	rm.RANGO_METROS_CODIGO, --RANGO METROS
 	bi_tm.TIPO_MONEDA_CODIGO, --TIPO MONEDA
-	bi_re.RANGO_ETARIO_CODIGO, --RANGO ETARIO EMPLEADO
 	bs.SUCURSAL_CODIGO, --SUCURSALES
-	a.ANUNCIO_PRECIO_PUBLICADO, --PRECIO PUBLICADO
+	bi_re.RANGO_ETARIO_CODIGO, --RANGO ETARIO EMPLEADO
+	bi_ubi.UBICACION_CODIGO, --ID UBICACION
 	bi_t_publi.TIEMPO_CODIGO,
-	bi_t_fina.TIEMPO_CODIGO,
-	DATEDIFF(DAY, a.ANUNCIO_FECHA_PUBLICACION, a.ANUNCIO_FECHA_FINALIZACION) --Cantidad dias
-
+	AVG(a.ANUNCIO_PRECIO_PUBLICADO), --PRECIO PROMEDIO
+	AVG(DATEDIFF(DAY, a.ANUNCIO_FECHA_PUBLICACION, a.ANUNCIO_FECHA_FINALIZACION)), --Cantidad dias
+	SUM(CASE
+            WHEN a.ANUNCIO_ESTADO = 'Finalizado' THEN 1
+            ELSE 0
+        END),--CANT OPERACIONES CONCRETADAS
+	COUNT(DISTINCT A.ANUNCIO_CODIGO),--Cant anuncios
+		SUM(CASE
+            WHEN a.ANUNCIO_ESTADO = 'Finalizado' THEN a.ANUNCIO_PRECIO_PUBLICADO
+            ELSE 0
+        END),--TODO: USAR MISMO CALCULO QUE CANT OPERACIONES CONCRETADAS PERO PARA SUMAR EL MONTO EN SI
+	COALESCE(AVG(CASE
+				 WHEN b_tiop.TIPO_OPERACION_CODIGO = 1 OR b_tiop.TIPO_OPERACION_CODIGO = 2 THEN alq.ALQUILER_COMISION
+				 WHEN b_tiop.TIPO_OPERACION_CODIGO = 3 THEN v.VENTA_COMISION
+				 ELSE 0 END),0) --COMISION PROMEDIO COMBINANDO VENTA Y ALQ
 FROM PIE_DERECHO.anuncios a
 JOIN PIE_DERECHO.tipos_de_operacion tiop ON tiop.TIPO_OPERACION_CODIGO = a.ANUNCIO_TIPO_OPERACION_CODIGO
 JOIN PIE_DERECHO.BI_TIPO_OPERACION b_tiop ON b_tiop.TIPO_OPERACION_DESCRIPCION = tiop.TIPO_OPERACION_ANUNCIO 
@@ -767,7 +784,10 @@ JOIN PIE_DERECHO.BI_TIEMPO bi_t_publi	ON bi_t_publi.TIEMPO_ANIO = YEAR(a.ANUNCIO
 JOIN PIE_DERECHO.BI_TIEMPO bi_t_fina	ON bi_t_fina.TIEMPO_ANIO = YEAR(a.ANUNCIO_FECHA_FINALIZACION) 
 										AND bi_t_fina.TIEMPO_MES = MONTH(a.ANUNCIO_FECHA_FINALIZACION) 
 										AND bi_t_fina.TIEMPO_CUATRIMESTRE = PIE_DERECHO.FX_CALCULAR_CUATRIMESTRE(a.ANUNCIO_FECHA_FINALIZACION)
-GROUP BY a.ANUNCIO_ESTADO, b_tiop.TIPO_OPERACION_CODIGO, bi_ubi.UBICACION_CODIGO, bi_amb.AMBIENTES_CODIGO, bi_bti.TIPO_INMUEBLE_CODIGO, rm.RANGO_METROS_CODIGO, bi_tm.TIPO_MONEDA_CODIGO, bi_re.RANGO_ETARIO_CODIGO, bs.SUCURSAL_CODIGO, a.ANUNCIO_PRECIO_PUBLICADO, bi_t_publi.TIEMPO_CODIGO, bi_t_fina.TIEMPO_CODIGO, a.ANUNCIO_FECHA_PUBLICACION, a.ANUNCIO_FECHA_FINALIZACION
+LEFT JOIN PIE_DERECHO.alquileres alq ON alq.ALQUILER_VENTA_ANUNCIO_PK = a.ANUNCIO_CODIGO
+LEFT JOIN PIE_DERECHO.ventas v ON v.VENTA_ANUNCIO_PK = a.ANUNCIO_CODIGO
+GROUP BY b_tiop.TIPO_OPERACION_CODIGO, bi_amb.AMBIENTES_CODIGO, bi_bti.TIPO_INMUEBLE_CODIGO, rm.RANGO_METROS_CODIGO,
+		 bi_tm.TIPO_MONEDA_CODIGO, bs.SUCURSAL_CODIGO, bi_re.RANGO_ETARIO_CODIGO, bi_ubi.UBICACION_CODIGO, bi_t_publi.TIEMPO_CODIGO
 END
 GO
 
@@ -776,39 +796,40 @@ AS
 BEGIN
 INSERT INTO PIE_DERECHO.BI_HECHOS_ALQUILER(
 	rango_etario_inquilino,
-	fecha_inicio,
-	fecha_fin,
-	pago_alq_fecha_pago,
-	pago_alq_fecha_inicio,
-	pago_alq_fecha_vencimiento,
-	pago_alq_importe,
-	alq_comision,
 	alquiler_ubicacion,
-	tipo_moneda,
 	tipo_operacion,
-	ambientes,
 	sucursal,
-	rango_metros,
-	tipo_inmueble
+	alquiler_tiempo,
+	pago_alq_tiempo,
+	alquiler_porcentaje_incumplimientos,
+	alquileres_activos,
+	pago_alq_cant_pagos,
+	pago_alq_promedio_aumento
 )
 SELECT DISTINCT
-	re.RANGO_ETARIO_CODIGO, --RANGO ETARIO INQUILINO	
-	bt_fin.TIEMPO_CODIGO, -- FECHA INICIO
-	bt_ini.TIEMPO_CODIGO, -- FECHA FIN
-	fecha_pago.TIEMPO_CODIGO,
-	fecha_pago_ini.TIEMPO_CODIGO,
-	fecha_pago_venci.TIEMPO_CODIGO,
-	ppa.PAGO_ALQUILER_IMPORTE,-- PAGO ALQ IMPORTE
-	a.ALQUILER_COMISION, --ALQ COMISION
+	rei.RANGO_ETARIO_CODIGO, --RANGO ETARIO INQUILINO
 	bi_ubi.UBICACION_CODIGO, -- UBICACION
-	bi_tm.TIPO_MONEDA_CODIGO,
 	b_tiop.TIPO_OPERACION_CODIGO,
-	bi_amb.AMBIENTES_CODIGO,
 	bs.SUCURSAL_CODIGO,
-	rm.RANGO_METROS_CODIGO,
-	bi_bti.TIPO_INMUEBLE_CODIGO
+	bt_ini.TIEMPO_CODIGO, 
+	fecha_pago.TIEMPO_CODIGO,
+	SUM(CASE WHEN fecha_pago.TIEMPO_ANIO > fecha_pago_venci.TIEMPO_ANIO AND fecha_pago.TIEMPO_CUATRIMESTRE > fecha_pago_venci.TIEMPO_CUATRIMESTRE AND
+	fecha_pago.TIEMPO_MES > fecha_pago_venci.TIEMPO_MES THEN 1.0 ELSE 0 END) / COUNT(*) * 100,
+	COUNT(CASE WHEN ea.ESTADO_DE_ALQUILERES_CODIGO = 3 THEN 1 ELSE 0 END),
+	COUNT(DISTINCT ppa.PAGO_ALQUILER_CODIGO),
+	SUM((ppa.PAGO_ALQUILER_IMPORTE - ppa_ant.PAGO_ALQUILER_IMPORTE)/ppa_ant.PAGO_ALQUILER_IMPORTE*100)/COUNT(ppa.PAGO_ALQUILER_CODIGO)--PAGO_ALQ_PROMEDIO_AUMENTO
+	--bt_fin.TIEMPO_CODIGO, -- FECHA INICIO -->los siguientes no van
+	--fecha_pago_ini.TIEMPO_CODIGO,
+	--fecha_pago_venci.TIEMPO_CODIGO,
+	--ppa.PAGO_ALQUILER_IMPORTE,-- PAGO ALQ IMPORTE
+	--a.ALQUILER_COMISION, --ALQ COMISION
+	--bi_tm.TIPO_MONEDA_CODIGO,
+	--bi_amb.AMBIENTES_CODIGO,
+	--rm.RANGO_METROS_CODIGO,
+	--bi_bti.TIPO_INMUEBLE_CODIGO
 FROM PIE_DERECHO.alquileres a
-JOIN PIE_DERECHO.BI_RANGO_ETARIO re ON re.RANGO_ETARIO_CODIGO = PIE_DERECHO.FX_CALCULAR_RANGO_ETARIO_INQUILINO(a.ALQUILER_INQUILINO_CODIGO)
+JOIN PIE_DERECHO.estado_de_alquileres ea ON ea.ESTADO_DE_ALQUILERES_CODIGO = a.ALQUILER_ESTADO_DE_ALQUILERES_CODIGO
+JOIN PIE_DERECHO.BI_RANGO_ETARIO rei ON rei.RANGO_ETARIO_CODIGO = PIE_DERECHO.FX_CALCULAR_RANGO_ETARIO_INQUILINO(a.ALQUILER_INQUILINO_CODIGO)
 INNER JOIN PIE_DERECHO.BI_TIEMPO bt_ini	ON bt_ini.TIEMPO_ANIO = YEAR(a.ALQUILER_FECHA_INICIO) 
 									AND bt_ini.TIEMPO_MES = MONTH(a.ALQUILER_FECHA_INICIO) 
 									AND bt_ini.TIEMPO_CUATRIMESTRE = PIE_DERECHO.FX_CALCULAR_CUATRIMESTRE(a.ALQUILER_FECHA_INICIO)
@@ -856,25 +877,19 @@ INSERT INTO PIE_DERECHO.BI_HECHOS_VENTA(
 	tiempo,
 	tipo_inmueble,
 	sucursal,
-	venta_precio,
-	superficie_total,
-	venta_comision,
 	venta_ubicacion,
 	tipo_moneda,
-	tipo_operacion,
-	ambientes
+	venta_precio_m2_promedio,
+	venta_cantidad
 )
 SELECT DISTINCT
 	t.TIEMPO_CODIGO, --VENTA TIEMPO	
 	bi_ti.TIPO_INMUEBLE_CODIGO, --TIPO INMUEBLE
 	bs.SUCURSAL_CODIGO,
-	v.VENTA_PRECIO_VENTA, --VENTA PRECIO
-	rm.RANGO_METROS_CODIGO,
-	v.VENTA_COMISION,
 	bi_ubi.UBICACION_CODIGO,
 	bi_tm.TIPO_MONEDA_CODIGO,
-	b_tiop.TIPO_OPERACION_CODIGO,
-	bi_amb.AMBIENTES_CODIGO
+	AVG(v.VENTA_PRECIO_VENTA/inmu.INMUEBLE_SUPERFICIETOTAL),
+	COUNT(DISTINCT v.VENTA_CODIGO)
 FROM PIE_DERECHO.ventas v
 JOIN PIE_DERECHO.anuncios a ON a.ANUNCIO_PK = v.VENTA_ANUNCIO_PK 
 JOIN PIE_DERECHO.agentes ag ON ag.AGENTE_CODIGO = a.ANUNCIO_AGENTE_CODIGO
@@ -897,7 +912,7 @@ JOIN PIE_DERECHO.BI_AMBIENTES bi_amb ON bi_amb.AMBIENTES_CANTIDAD = amb.AMBIENTE
 JOIN PIE_DERECHO.tipos_de_inmueble ti ON ti.TIPO_INMUEBLE_CODIGO = inmu.INMUEBLE_TIPO_INMUEBLE_CODIGO 
 JOIN PIE_DERECHO.BI_TIPO_INMUEBLE bi_ti ON bi_ti.TIPO_INMUEBLE = ti.TIPO_INMUEBLE_INMUEBLE
 JOIN PIE_DERECHO.BI_TIEMPO t ON t.TIEMPO_ANIO = YEAR(v.VENTA_FECHA) AND t.TIEMPO_CUATRIMESTRE = PIE_DERECHO.FX_CALCULAR_CUATRIMESTRE(v.VENTA_FECHA) AND t.TIEMPO_MES = DATEPART(MONTH,v.VENTA_FECHA)
-GROUP BY t.TIEMPO_CODIGO, bi_ti.TIPO_INMUEBLE_CODIGO, bs.SUCURSAL_CODIGO, v.VENTA_PRECIO_VENTA, rm.RANGO_METROS_CODIGO, v.VENTA_COMISION, bi_ubi.UBICACION_CODIGO, bi_tm.TIPO_MONEDA_CODIGO, b_tiop.TIPO_OPERACION_CODIGO, bi_amb.AMBIENTES_CODIGO
+GROUP BY bi_ubi.UBICACION_CODIGO, t.TIEMPO_CODIGO, bi_ti.TIPO_INMUEBLE_CODIGO, bs.SUCURSAL_CODIGO, bi_tm.TIPO_MONEDA_CODIGO
 END
 GO
 
@@ -961,6 +976,7 @@ IF OBJECT_ID('PIE_DERECHO.VISTA_MONTO_TOTAL_CIERRE_CONTRATOS', 'V') IS NOT NULL
     DROP VIEW PIE_DERECHO.VISTA_MONTO_TOTAL_CIERRE_CONTRATOS;
 GO
 
+/*
 --1
 CREATE VIEW PIE_DERECHO.VISTA_DURACION_PROMEDIO_ANUNCIOS
 AS
@@ -1149,6 +1165,7 @@ AS
 	FROM PIE_DERECHO.BI_HECHOS_ANUNCIO a	
 	JOIN PIE_DERECHO.BI_TIEMPO t ON t.TIEMPO_CODIGO = a.anuncio_fecha_finalizacion
 GO
+*/
 
 /*
 SELECT * FROM PIE_DERECHO.VISTA_DURACION_PROMEDIO_ANUNCIOS
@@ -1161,3 +1178,7 @@ SELECT * FROM PIE_DERECHO.VISTA_VALOR_PROMEDIO_COMISION
 SELECT * FROM PIE_DERECHO.VISTA_PORCENTAJE_OPERACIONES_CONCRETADAS
 SELECT * FROM PIE_DERECHO.VISTA_MONTO_TOTAL_CIERRE_CONTRATOS
 */
+
+--SELECT * FROM PIE_DERECHO.BI_HECHOS_ANUNCIO
+--SELECT * FROM PIE_DERECHO.BI_HECHOS_VENTA
+--SELECT * FROM PIE_DERECHO.BI_HECHOS_ALQUILER --> ANTES:  23.181
